@@ -13,9 +13,9 @@ export class GoogleGeolocationGateway implements GeoLocationGateway {
                 };
             }[];
         }>(
-            `https://maps.googleapis.com/maps/api/geocode/json?key=AIzaSyBHE1UHKUMieyw_HjJuCptz1fwB66QxzwE&address=${address
-                .split(' ')
-                .join('%20')}`,
+            `https://maps.googleapis.com/maps/api/geocode/json?key=${
+                process.env.GOOGLE_API_KEY as string
+            }&address=${address.split(' ').join('%20')}`,
         );
 
         if (response.status !== 200) {
