@@ -4,6 +4,9 @@ import { CreateSupermarketUseCase } from './use-cases/create-supermarket-use-cas
 import type { SupermarketRepository } from './bondaries/supermarket-repository';
 import { PgSupermarketRepository } from './adapters/pg-supermarkets-repository';
 import { PgConnection, type DbConnection } from './adapters/pg-connection';
+import { CreateProductUseCase } from './use-cases/create-product-use-case';
+import type { ProductRepository } from './bondaries/product-repository';
+import { PgProductRepository } from './adapters/pg-product-repository';
 
 export async function lambdaHandler(event: SQSEvent): Promise<void> {
     const recordsSchema = z.array(
@@ -44,7 +47,9 @@ export async function lambdaHandler(event: SQSEvent): Promise<void> {
 
         const dbConnection: DbConnection = new PgConnection('postgres://admin:admin@localhost:5432/my_db');
         const supermarketRepository: SupermarketRepository = new PgSupermarketRepository(dbConnection);
+        const productRepository: ProductRepository = new PgProductRepository(dbConnection);
         const createSupermarketUseCase = new CreateSupermarketUseCase(supermarketRepository);
+        const createProductUseCase = new CreateProductUseCase(productRepository);
 
         for (let record of records) {
             await createSupermarketUseCase.execute({
@@ -53,7 +58,7 @@ export async function lambdaHandler(event: SQSEvent): Promise<void> {
                 address: record.address,
             });
             for (let item of record.items) {
-                // criar produto caso ele ainda nao exista
+                await createProductUseCase.execute({ code: item.code, name: item.name });
                 // criar um novo registro no seu historico de preco
             }
         }
