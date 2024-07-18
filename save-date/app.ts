@@ -7,6 +7,9 @@ import { PgConnection, type DbConnection } from './adapters/pg-connection';
 import { CreateProductUseCase } from './use-cases/create-product-use-case';
 import type { ProductRepository } from './bondaries/product-repository';
 import { PgProductRepository } from './adapters/pg-product-repository';
+import { CreateProductPriceUseCase } from './use-cases/create-product-price-use-case';
+import type { ProductPriceRepository } from './bondaries/product-price-repository';
+import { PgProductPriceRepository } from './adapters/pg-product-price-repository';
 
 export async function lambdaHandler(event: SQSEvent): Promise<void> {
     const recordsSchema = z.array(
@@ -48,8 +51,11 @@ export async function lambdaHandler(event: SQSEvent): Promise<void> {
         const dbConnection: DbConnection = new PgConnection('postgres://admin:admin@localhost:5432/my_db');
         const supermarketRepository: SupermarketRepository = new PgSupermarketRepository(dbConnection);
         const productRepository: ProductRepository = new PgProductRepository(dbConnection);
+        const productPriceRepository: ProductPriceRepository = new PgProductPriceRepository(dbConnection);
+
         const createSupermarketUseCase = new CreateSupermarketUseCase(supermarketRepository);
         const createProductUseCase = new CreateProductUseCase(productRepository);
+        const createProductPriceUseCase = new CreateProductPriceUseCase(productPriceRepository);
 
         for (let record of records) {
             await createSupermarketUseCase.execute({
@@ -59,7 +65,13 @@ export async function lambdaHandler(event: SQSEvent): Promise<void> {
             });
             for (let item of record.items) {
                 await createProductUseCase.execute({ code: item.code, name: item.name });
-                // criar um novo registro no seu historico de preco
+                await createProductPriceUseCase.execute({
+                    nfeId: record.nfeId,
+                    date: record.date,
+                    price: item.price,
+                    productId: item.code,
+                    supermarketId: record.cnpj,
+                });
             }
         }
     } catch (error: unknown) {
