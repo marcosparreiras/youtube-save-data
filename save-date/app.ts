@@ -10,6 +10,9 @@ import { PgProductRepository } from './adapters/pg-product-repository';
 import { CreateProductPriceUseCase } from './use-cases/create-product-price-use-case';
 import type { ProductPriceRepository } from './bondaries/product-price-repository';
 import { PgProductPriceRepository } from './adapters/pg-product-price-repository';
+import { GeolocationGetawayRegistry } from './registries/geolocation-gataway-registry';
+import type { GeoLocationGateway } from './bondaries/geolocation-gateway';
+import { GoogleGeolocationGateway } from './adapters/google-geolocation-gateway';
 
 export async function lambdaHandler(event: SQSEvent): Promise<void> {
     const recordsSchema = z.array(
@@ -48,7 +51,11 @@ export async function lambdaHandler(event: SQSEvent): Promise<void> {
             }),
         );
 
-        const dbConnection: DbConnection = new PgConnection('postgres://admin:admin@localhost:5432/my_db');
+        const geolocationGateway: GeoLocationGateway = new GoogleGeolocationGateway();
+        GeolocationGetawayRegistry.getInstance().setGeolocationGateway(geolocationGateway);
+        const dbConnection: DbConnection = new PgConnection(
+            'postgresql://admin:ZKZEkxBTPeuqok9hpVvXEV1qxzbVQECf@dpg-cqcmiat6l47c73d7td2g-a.virginia-postgres.render.com/db_midas?ssl=true',
+        );
         const supermarketRepository: SupermarketRepository = new PgSupermarketRepository(dbConnection);
         const productRepository: ProductRepository = new PgProductRepository(dbConnection);
         const productPriceRepository: ProductPriceRepository = new PgProductPriceRepository(dbConnection);
